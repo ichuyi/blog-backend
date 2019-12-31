@@ -4,38 +4,41 @@ import (
 	"blog-backend/dao"
 	"blog-backend/util"
 	"github.com/gin-gonic/gin"
+	"strconv"
 )
 
 type AddLabelReq struct {
-	Name   string `json:"name"`
-	UserId int    `json:"user_id"`
+	Name string `json:"name"`
 }
 
 func addLabel(ctx *gin.Context) {
 	req := AddLabelReq{}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		util.FailedResponse(ctx, ParaError, ParaErrorMsg)
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
 		return
 	}
-	if label, err := dao.InsertLabel(req.Name, req.UserId); err != nil {
-		util.FailedResponse(ctx, SQLError, SQLErrorMsg)
+	value, _ := ctx.Get("user_id")
+	id, err := strconv.Atoi(value.(string))
+	if err != nil {
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
+		return
+	}
+	if label, err := dao.InsertLabel(req.Name, id); err != nil {
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 	} else {
 		util.OKResponse(ctx, label)
 	}
 }
 
-type GetLabelListReq struct {
-	UserId int `json:"user_id"`
-}
-
 func getLabelList(ctx *gin.Context) {
-	req := GetLabelListReq{}
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		util.FailedResponse(ctx, ParaError, ParaErrorMsg)
+	value, _ := ctx.Get("user_id")
+	id, err := strconv.Atoi(value.(string))
+	if err != nil {
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
 		return
 	}
-	if list, err := dao.GetAllLabel(req.UserId); err != nil {
-		util.FailedResponse(ctx, SQLError, SQLErrorMsg)
+	if list, err := dao.GetAllLabel(id); err != nil {
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 	} else {
 		util.OKResponse(ctx, list)
 	}

@@ -18,7 +18,7 @@ func InsertLabel(tag string, userId int) (label *model.Label, err error) {
 }
 func GetAllLabel(userId int) (labelList []model.Label, err error) {
 	labelList = make([]model.Label, 0)
-	if err = blogEngine.Table("label").Where("user_id = ?", userId).Find(&labelList); err != nil {
+	if err = blogEngine.Table("label").Desc("id").Where("user_id = ?", userId).Find(&labelList); err != nil {
 		log.Errorf("get label list error: %s", err.Error())
 	}
 	return

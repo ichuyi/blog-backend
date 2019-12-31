@@ -12,14 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 )
-
-var fileType = map[string]string{
-	"jpg": "image/jpeg",
-	"png": "image/png",
-	"jpeg":"image/jpeg",
-}
 
 func md5File(content []byte) string {
 	h := md5.New()
@@ -40,68 +33,53 @@ func ReadFromLocal(key string) ([]byte, error) {
 	return ioutil.ReadFile(filename)
 }
 
-type UploadFileReq struct {
-	UserId int `json:"user_id"`
-}
-
 func uploadFile(ctx *gin.Context) {
-	req := UploadFileReq{
+	value, _ := ctx.Get("user_id")
+	userId, err := strconv.Atoi(value.(string))
+	if err != nil {
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
+		log.Errorf("get userid error: %s", err.Error())
+		return
 	}
 	form, err := ctx.MultipartForm()
 	if err != nil {
-		util.FailedResponse(ctx, ParaError, ParaErrorMsg)
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
 		log.Errorf("parse file error: %s", err.Error())
-		return
-	}
-	value,ok:=form.Value["userId"]
-	if !ok{
-		util.FailedResponse(ctx,ParaError,ParaErrorMsg)
-		return
-	}
-	req.UserId,err=strconv.Atoi(value[0])
-	if err!=nil{
-		util.FailedResponse(ctx,ParaError,ParaErrorMsg)
 		return
 	}
 	files := form.File["files"]
 	result := make([]model.FileInfo, len(files))
 	for i, f := range files {
 		name := f.Filename
-		info:=strings.Split(name,".")
-		if len(info)<2{
-			continue
-		}
-		if _,ok:=fileType[info[len(info)-1]];!ok{
-			continue
-		}
+		contentType := f.Header.Get("Content-Type")
 		t, err := f.Open()
 		if err != nil {
-			util.FailedResponse(ctx, OpenFileError, OpenFileErrorMsg)
+			util.FailedResponse(ctx, util.OpenFileError, util.OpenFileErrorMsg)
 			log.Errorf("open file error: %s", err.Error())
 			return
 		}
 		content, err := ioutil.ReadAll(t)
 		log.Infof("file size is %d, read size is %d", f.Size, len(content))
 		if err != nil {
-			util.FailedResponse(ctx, ReadFileError, ReadFileErrorMsg)
+			util.FailedResponse(ctx, util.ReadFileError, util.ReadFileErrorMsg)
 			log.Errorf("read file error: %s", err.Error())
 			return
 		}
 		key := md5File(content)
 		n, err := writeToLocal(content, key)
 		if err != nil {
-			util.FailedResponse(ctx, WriteFileError, WriteFileErrorMsg)
+			util.FailedResponse(ctx, util.WriteFileError, util.WriteFileErrorMsg)
 			log.Errorf("write into file error: %s", err.Error())
 			return
 		}
 		if n != len(content) {
-			util.FailedResponse(ctx, WriteFileError, WriteFileErrorMsg)
+			util.FailedResponse(ctx, util.WriteFileError, util.WriteFileErrorMsg)
 			log.Errorf("content size is: %d,actually write size is: %d", len(content), n)
 			return
 		}
-		p, err := dao.InsertFile(name, key, req.UserId)
+		p, err := dao.InsertFile(name, key, userId, contentType)
 		if err != nil {
-			util.FailedResponse(ctx, SQLError, SQLErrorMsg)
+			util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 			return
 		}
 		result[i] = *p
@@ -109,30 +87,29 @@ func uploadFile(ctx *gin.Context) {
 	util.OKResponse(ctx, result)
 }
 
-
-func getFileList(ctx *gin.Context)  {
-	value:=ctx.Query("user_id")
-	id,err:=strconv.Atoi(value)
-	if err!=nil{
-		util.FailedResponse(ctx,ParaError,ParaErrorMsg)
+func getFileList(ctx *gin.Context) {
+	value, _ := ctx.Get("user_id")
+	id, err := strconv.Atoi(value.(string))
+	if err != nil {
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
 		return
 	}
-	file:=model.FileInfo{
-		UserId:   id,
+	file := model.FileInfo{
+		UserId: id,
 	}
-	list,err:=dao.GetFileByCondition(&file)
-	if err!=nil{
-		util.FailedResponse(ctx,SQLError,SQLErrorMsg)
+	list, err := dao.GetFileByCondition(&file)
+	if err != nil {
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 		return
 	}
-	util.OKResponse(ctx,list)
+	util.OKResponse(ctx, list)
 }
 func getFile(ctx *gin.Context) {
 	value := ctx.Query("id")
 	id, err := strconv.Atoi(value)
 	if err != nil {
-		util.FailedResponse(ctx, ParaError, ParaErrorMsg)
-		log.Errorf("parse string to int error: $s", err.Error())
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
+		log.Errorf("parse string to int error: %s", err.Error())
 		return
 	}
 	file := model.FileInfo{
@@ -140,72 +117,60 @@ func getFile(ctx *gin.Context) {
 	}
 	list, err := dao.GetFileByCondition(&file)
 	if err != nil {
-		util.FailedResponse(ctx, SQLError, SQLErrorMsg)
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 		return
 	}
 	if len(list) == 0 {
-		util.FailedResponse(ctx, FileNotExist, FileNotExistMsg)
+		util.FailedResponse(ctx, util.FileNotExist, util.FileNotExistMsg)
 		return
 	}
 	file = list[0]
 	content, err := ReadFromLocal(file.Key)
 	if err != nil {
-		util.FailedResponse(ctx, ReadFileError, ReadFileErrorMsg)
+		util.FailedResponse(ctx, util.ReadFileError, util.ReadFileErrorMsg)
 		log.Errorf("read file error: %s", err.Error())
 		return
 	}
-	info := strings.Split(file.Filename, ".")
-	if len(info) < 2 {
-		util.FailedResponse(ctx, ReadFileError, ReadFileErrorMsg)
-		log.Errorf("filename is: %s", file.Filename)
-		return
-	}
 	ctx.Header("content-disposition", `attachment; filename=`+file.Filename)
-	contentType, ok := fileType[info[len(info)-1]]
-	if !ok {
-		util.FailedResponse(ctx, ReadFileError, ReadFileErrorMsg)
-		log.Errorf("file type is: %s", info[len(info)-1])
-		return
-	}
-	ctx.Data(http.StatusOK, contentType, content)
+	ctx.Data(http.StatusOK, file.ContentType, content)
 }
-func deleteFile(ctx *gin.Context)  {
+func deleteFile(ctx *gin.Context) {
 	value := ctx.Query("id")
 	id, err := strconv.Atoi(value)
 	if err != nil {
-		util.FailedResponse(ctx, ParaError, ParaErrorMsg)
-		log.Errorf("parse string to int error: $s", err.Error())
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
+		log.Errorf("parse string to int error: %s", err.Error())
 		return
 	}
-	file:=model.FileInfo{
-		Id:       id,
+	file := model.FileInfo{
+		Id: id,
 	}
-	list,err:=dao.GetFileByCondition(&file)
-	if err!=nil{
-		util.FailedResponse(ctx,SQLError,SQLErrorMsg)
+	list, err := dao.GetFileByCondition(&file)
+	if err != nil {
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 		return
 	}
-	if len(list)==0{
-		util.FailedResponse(ctx,FileNotExist,FileNotExistMsg)
+	if len(list) == 0 {
+		util.FailedResponse(ctx, util.FileNotExist, util.FileNotExistMsg)
 		return
 	}
-	file.Key=list[0].Key
-	if err:=dao.DeleteFile(id);err!=nil{
-		util.FailedResponse(ctx,SQLError,SQLErrorMsg)
+	file.Key = list[0].Key
+	if err := dao.DeleteFile(id); err != nil {
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 		return
 	}
-	file.Id=0
-	list,err=dao.GetFileByCondition(&file)
-	if err!=nil{
-		util.FailedResponse(ctx,SQLError,SQLErrorMsg)
+	file.Id = 0
+	list, err = dao.GetFileByCondition(&file)
+	if err != nil {
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 		return
 	}
-	if len(list)==0{
-		if err=os.Remove(util.UploadPath + file.Key);err!=nil{
-			util.FailedResponse(ctx,DeleteFileError,DeleteFileErrorMsg)
-			log.Errorf("remove local file error: %s",err.Error())
+	if len(list) == 0 {
+		if err = os.Remove(util.UploadPath + file.Key); err != nil {
+			util.FailedResponse(ctx, util.DeleteFileError, util.DeleteFileErrorMsg)
+			log.Errorf("remove local file error: %s", err.Error())
 			return
 		}
 	}
-	util.OKResponse(ctx,nil)
+	util.OKResponse(ctx, nil)
 }

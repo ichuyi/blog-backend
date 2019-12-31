@@ -3,15 +3,16 @@
     "port": "12345"
   },
   "mysql": {
-    "host": "182.92.199.228",
+    "host": "182.192.199.228",
     "port": "3306",
     "user": "root",
     "password": "191400",
-    "database": "blog"
+    "database": "blog-test"
   },
   "mongo": {
-    "host": "182.92.199.228",
-    "port": "27017"
+    "host": "182.192.199.228",
+    "port": "27017",
+    "data_base": "mongo-test"
   },
   "upload": {
     "upload_folder": "files"

@@ -5,7 +5,7 @@ import (
 	"blog-backend/model"
 	"blog-backend/util"
 	"github.com/gin-gonic/gin"
-	"strconv"
+	log "github.com/sirupsen/logrus"
 )
 
 type SignReq struct {
@@ -16,12 +16,12 @@ type SignReq struct {
 func signUp(ctx *gin.Context) {
 	req := SignReq{}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		util.FailedResponse(ctx, ParaError, ParaErrorMsg)
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
 		return
 	}
 	user, err := dao.InsertUser(req.Username, req.Password)
 	if err != nil {
-		util.FailedResponse(ctx, SQLError, SQLErrorMsg)
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 		return
 	}
 	util.OKResponse(ctx, user)
@@ -29,25 +29,31 @@ func signUp(ctx *gin.Context) {
 func signIn(ctx *gin.Context) {
 	req := SignReq{}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		util.FailedResponse(ctx, ParaError, ParaErrorMsg)
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
 		return
 	}
 	if user, err := dao.GetUserByCondition(model.User{
 		Username: req.Username,
 	}); err != nil {
-		util.FailedResponse(ctx, SQLError, SQLErrorMsg)
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 	} else if user == nil {
-		util.FailedResponse(ctx, UserNotExist, UserNotExistMsg)
+		util.FailedResponse(ctx, util.UserNotExist, util.UserNotExistMsg)
 	} else if user.Password != req.Password {
-		util.FailedResponse(ctx, PasswordError, PasswordErrorMsg)
+		util.FailedResponse(ctx, util.PasswordError, util.PasswordErrorMsg)
 	} else {
-		ctx.SetCookie("current_user_id",strconv.Itoa(user.Id),MaxAge,"/",Domain,false,true)
+		token, err := util.GetToken(user)
+		if err != nil {
+			log.Errorf("get token error: %s", err.Error())
+			util.FailedResponse(ctx, util.OtherError, util.OtherErrorMsg)
+			return
+		}
+		ctx.SetCookie("token", token, util.MaxAge, "/", util.Domain, false, true)
 		util.OKResponse(ctx, *user)
 	}
 	return
 }
 
-func signOut(ctx *gin.Context)  {
-	ctx.SetCookie("current_user_id","",-1,"/",Domain,false,true)
-	util.OKResponse(ctx,nil)
+func signOut(ctx *gin.Context) {
+	ctx.SetCookie("token", "", -1, "/", util.Domain, false, true)
+	util.OKResponse(ctx, nil)
 }

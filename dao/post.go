@@ -2,6 +2,7 @@ package dao
 
 import (
 	"blog-backend/model"
+	"blog-backend/util"
 	"context"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,7 +21,7 @@ func InsertPost(title string, content string, labels []int, userId int) (*model.
 		log.Errorf("insert post into mysql error: %s", err.Error())
 		return nil, err
 	}
-	collection := BlogClient.Database("blog").Collection("post")
+	collection := BlogClient.Database(util.ConfigInfo.Mongo.DataBase).Collection("post")
 	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 	_, err = collection.InsertOne(ctx, bson.M{"_id": post.Id, "content": post.Content})
 	if err != nil {
@@ -31,14 +32,14 @@ func InsertPost(title string, content string, labels []int, userId int) (*model.
 }
 func GetPostByCondition(post *model.Post) ([]*model.Post, error) {
 	list := make([]*model.Post, 0)
-	err := blogEngine.Table("post").Find(&list, post)
+	err := blogEngine.Table("post").Desc("update_time").Find(&list, post)
 	if err != nil {
 		log.Errorf("get post from mysql error: %s", err.Error())
 		return nil, err
 	}
 	for _, p := range list {
 		res := model.Post{}
-		collection := BlogClient.Database("blog").Collection("post")
+		collection := BlogClient.Database(util.ConfigInfo.Mongo.DataBase).Collection("post")
 		err = collection.FindOne(context.TODO(), bson.M{"_id": p.Id}).Decode(&res)
 		if err != nil {
 			log.Errorf("get post from mongo error: %s", err.Error())

@@ -26,7 +26,7 @@ func DeleteTodoById(todoId int) error {
 	return err
 }
 func UpdateTodoById(todo *model.Todo) error {
-	_, err := blogEngine.Table("todo").Where("id= ? ", todo.Id).Update(todo)
+	_, err := blogEngine.Table("todo").Cols("finish", "finish_time").Where("id= ? ", todo.Id).Update(todo)
 	if err != nil {
 		log.Errorf("update todo error: %s", err.Error())
 	}
@@ -34,7 +34,7 @@ func UpdateTodoById(todo *model.Todo) error {
 }
 func GetTodoList(todo *model.Todo) (list []model.Todo, err error) {
 	list = make([]model.Todo, 0)
-	err = blogEngine.Table("todo").Find(&list, todo)
+	err = blogEngine.Table("todo").Asc("finish", "update_time").Find(&list, todo)
 	if err != nil {
 		log.Errorf("get todo error: %s", err.Error())
 	}

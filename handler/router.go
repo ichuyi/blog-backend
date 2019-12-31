@@ -7,13 +7,13 @@ import (
 func InitRouter() *gin.Engine {
 	r := gin.Default()
 	//gin.SetMode(gin.ReleaseMode)
-	v0:=r.Group("/api")
+	v0 := r.Group("/api")
 	{
 		v1 := v0.Group("/todo")
 		{
 			v1.Use(authorization)
 			v1.POST("/add", addTodo)
-			v1.POST("/finish", finishTodo)
+			v1.POST("/update", updateTodo)
 			v1.POST("/delete", deleteTodo)
 			v1.POST("/list", getTodoList)
 		}
@@ -21,7 +21,7 @@ func InitRouter() *gin.Engine {
 		{
 			v2.POST("/in", signIn)
 			v2.POST("/up", signUp)
-			v2.POST("/out",signOut)
+			v2.POST("/out", signOut)
 		}
 		v3 := v0.Group("/post")
 		{

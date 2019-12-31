@@ -7,7 +7,7 @@ import (
 
 func GetFileByCondition(file *model.FileInfo) ([]model.FileInfo, error) {
 	list := make([]model.FileInfo, 0)
-	err := blogEngine.Table("file_info").Find(&list, file)
+	err := blogEngine.Table("file_info").Desc("id").Find(&list, file)
 	if err != nil {
 		log.Errorf("get file info error: %s", err.Error())
 		return nil, err
@@ -15,11 +15,12 @@ func GetFileByCondition(file *model.FileInfo) ([]model.FileInfo, error) {
 		return list, nil
 	}
 }
-func InsertFile(name string, key string, userId int) (*model.FileInfo, error) {
+func InsertFile(name string, key string, userId int, contentType string) (*model.FileInfo, error) {
 	file := model.FileInfo{
-		Filename: name,
-		Key:      key,
-		UserId:   userId,
+		Filename:    name,
+		Key:         key,
+		UserId:      userId,
+		ContentType: contentType,
 	}
 	_, err := blogEngine.Table("file_info").Insert(&file)
 	if err != nil {
@@ -28,13 +29,13 @@ func InsertFile(name string, key string, userId int) (*model.FileInfo, error) {
 	}
 	return &file, nil
 }
-func DeleteFile(id int)error  {
-	file:=model.FileInfo{
-		Id:       id,
+func DeleteFile(id int) error {
+	file := model.FileInfo{
+		Id: id,
 	}
-	_,err:=blogEngine.Table("file_info").Delete(&file)
-	if err!=nil{
-		log.Errorf("delete file error: %s, id is : %d",err.Error(),id)
+	_, err := blogEngine.Table("file_info").Delete(&file)
+	if err != nil {
+		log.Errorf("delete file error: %s, id is : %d", err.Error(), id)
 		return err
 	}
 	return nil

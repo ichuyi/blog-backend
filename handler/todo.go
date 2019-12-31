@@ -5,79 +5,85 @@ import (
 	"blog-backend/model"
 	"blog-backend/util"
 	"github.com/gin-gonic/gin"
-	"time"
+	"strconv"
 )
 
 type AddTodoReq struct {
 	Content string `json:"content"`
-	UserId  int    `json:"user_id"`
 }
 
 func addTodo(ctx *gin.Context) {
 	req := AddTodoReq{}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		util.FailedResponse(ctx, ParaError, ParaErrorMsg)
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
 		return
 	}
-	todo, err := dao.InsertTodo(req.Content, req.UserId)
+	value, _ := ctx.Get("user_id")
+	id, err := strconv.Atoi(value.(string))
 	if err != nil {
-		util.FailedResponse(ctx, SQLError, SQLErrorMsg)
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
+		return
+	}
+	todo, err := dao.InsertTodo(req.Content, id)
+	if err != nil {
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 		return
 	}
 	util.OKResponse(ctx, *todo)
 }
 
 type UpdateTodoReq struct {
-	Id int `json:"id"`
+	Id     int `json:"id"`
+	Finish int `json:"finish"`
 }
 
-func finishTodo(ctx *gin.Context) {
+func updateTodo(ctx *gin.Context) {
 	req := UpdateTodoReq{}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		util.FailedResponse(ctx, ParaError, ParaErrorMsg)
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
 		return
 	}
 	todo := model.Todo{
-		Id:         req.Id,
-		Finish:     FINISH,
-		FinishTime: model.JsonTime(time.Now()),
+		Id:     req.Id,
+		Finish: req.Finish,
 	}
 	if err := dao.UpdateTodoById(&todo); err != nil {
-		util.FailedResponse(ctx, SQLError, SQLErrorMsg)
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 		return
 	}
 	util.OKResponse(ctx, nil)
+}
+
+type DeleteTodoReq struct {
+	Id int `json:"id"`
 }
 
 func deleteTodo(ctx *gin.Context) {
-	req := UpdateTodoReq{}
+	req := DeleteTodoReq{}
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		util.FailedResponse(ctx, ParaError, ParaErrorMsg)
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
 		return
 	}
 	if err := dao.DeleteTodoById(req.Id); err != nil {
-		util.FailedResponse(ctx, SQLError, SQLErrorMsg)
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 		return
 	}
 	util.OKResponse(ctx, nil)
 }
 
-type TodoListReq struct {
-	Id int `json:"id"`
-}
-
 func getTodoList(ctx *gin.Context) {
-	req := TodoListReq{}
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		util.FailedResponse(ctx, ParaError, ParaErrorMsg)
+	value, _ := ctx.Get("user_id")
+	id, err := strconv.Atoi(value.(string))
+	if err != nil {
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
 		return
 	}
 	todo := model.Todo{
-		UserId: req.Id,
+		UserId: id,
 	}
 	if list, err := dao.GetTodoList(&todo); err != nil {
-		util.FailedResponse(ctx, SQLError, SQLErrorMsg)
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 
 	} else {
 		util.OKResponse(ctx, list)

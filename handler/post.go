@@ -5,31 +5,33 @@ import (
 	"blog-backend/model"
 	"blog-backend/util"
 	"github.com/gin-gonic/gin"
+	"strconv"
 )
 
 type AddPostReq struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`
-	UserId  int    `json:"user_id"`
 	Labels  []int  `json:"labels"`
 }
 
 func addPost(ctx *gin.Context) {
 	req := AddPostReq{}
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		util.FailedResponse(ctx, ParaError, ParaErrorMsg)
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
 		return
 	}
-	post, err := dao.InsertPost(req.Title, req.Content, req.Labels, req.UserId)
+	value, _ := ctx.Get("user_id")
+	id, err := strconv.Atoi(value.(string))
 	if err != nil {
-		util.FailedResponse(ctx, SQLError, SQLErrorMsg)
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
+		return
+	}
+	post, err := dao.InsertPost(req.Title, req.Content, req.Labels, id)
+	if err != nil {
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 		return
 	}
 	util.OKResponse(ctx, *post)
-}
-
-type GetPostListReq struct {
-	UserId int `json:"user_id"`
 }
 
 type PostDetail struct {
@@ -45,17 +47,18 @@ type PostDetail struct {
 }
 
 func getPostList(ctx *gin.Context) {
-	req := GetPostListReq{}
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		util.FailedResponse(ctx, ParaError, ParaErrorMsg)
+	value, _ := ctx.Get("user_id")
+	id, err := strconv.Atoi(value.(string))
+	if err != nil {
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
 		return
 	}
 	post := &model.Post{
-		UserId: req.UserId,
+		UserId: id,
 	}
 	postList, err := dao.GetPostByCondition(post)
 	if err != nil {
-		util.FailedResponse(ctx, SQLError, SQLErrorMsg)
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 		return
 	}
 	result := make([]PostDetail, len(postList))
@@ -74,7 +77,7 @@ func getPostList(ctx *gin.Context) {
 		for j, l := range p.Label {
 			la, err := dao.GetLabelById(l)
 			if err != nil || la == nil {
-				util.FailedResponse(ctx, SQLError, SQLErrorMsg)
+				util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
 				return
 			}
 			result[i].Label[j].Name = la.Name

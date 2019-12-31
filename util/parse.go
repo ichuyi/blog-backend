@@ -17,8 +17,9 @@ type MySQLConfig struct {
 	Database string `json:"database"`
 }
 type MongoConfig struct {
-	Host string `json:"host"`
-	Port string `json:"port"`
+	Host     string `json:"host"`
+	Port     string `json:"port"`
+	DataBase string `json:"data_base"`
 }
 type ServiceConfig struct {
 	Port string `json:"port"`
@@ -47,9 +48,9 @@ type Config struct {
 var (
 	execBasePath = getCurrentDirectory()
 	//execBasePath = "/Users/mhiwy/Documents/blog-backend"
-	configPath   = execBasePath + "/config.json"
-	ConfigInfo   Config
-	UploadPath   string
+	configPath = execBasePath + "/config.json"
+	ConfigInfo Config
+	UploadPath string
 )
 
 func init() {
