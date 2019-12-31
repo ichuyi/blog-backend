@@ -11,6 +11,7 @@ func InitRouter() *gin.Engine {
 	{
 		v1 := v0.Group("/todo")
 		{
+			v1.Use(authorization)
 			v1.POST("/add", addTodo)
 			v1.POST("/finish", finishTodo)
 			v1.POST("/delete", deleteTodo)
@@ -20,19 +21,23 @@ func InitRouter() *gin.Engine {
 		{
 			v2.POST("/in", signIn)
 			v2.POST("/up", signUp)
+			v2.POST("/out",signOut)
 		}
 		v3 := v0.Group("/post")
 		{
+			v3.Use(authorization)
 			v3.POST("/add", addPost)
 			v3.POST("/list", getPostList)
 		}
 		v4 := v0.Group("/label")
 		{
+			v4.Use(authorization)
 			v4.POST("/add", addLabel)
 			v4.POST("/list", getLabelList)
 		}
 		v5 := v0.Group("/file")
 		{
+			v5.Use(authorization)
 			v5.POST("/upload", uploadFile)
 			v5.GET("/get", getFile)
 			v5.GET("/list", getFileList)

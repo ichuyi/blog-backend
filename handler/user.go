@@ -5,6 +5,7 @@ import (
 	"blog-backend/model"
 	"blog-backend/util"
 	"github.com/gin-gonic/gin"
+	"strconv"
 )
 
 type SignReq struct {
@@ -40,7 +41,13 @@ func signIn(ctx *gin.Context) {
 	} else if user.Password != req.Password {
 		util.FailedResponse(ctx, PasswordError, PasswordErrorMsg)
 	} else {
+		ctx.SetCookie("current_user_id",strconv.Itoa(user.Id),MaxAge,"/",Domain,false,true)
 		util.OKResponse(ctx, *user)
 	}
 	return
+}
+
+func signOut(ctx *gin.Context)  {
+	ctx.SetCookie("current_user_id","",-1,"/",Domain,false,true)
+	util.OKResponse(ctx,nil)
 }
