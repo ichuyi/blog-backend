@@ -38,6 +38,7 @@ type PostDetail struct {
 	Id         int            `json:"id"`
 	UserId     int            `json:"user_id"`
 	CreateTime model.JsonTime `json:"create_time"`
+	UpdateTime model.JsonTime `json:"update_time"`
 	Title      string         `json:"title"`
 	Content    string         `json:"content"`
 	Label      []struct {
@@ -67,6 +68,7 @@ func getPostList(ctx *gin.Context) {
 			Id:         p.Id,
 			UserId:     p.UserId,
 			CreateTime: p.CreateTime,
+			UpdateTime: p.UpdateTime,
 			Title:      p.Title,
 			Content:    p.Content,
 		}
