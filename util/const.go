@@ -21,6 +21,8 @@ const (
 	DeleteFileErrorMsg = "删除文件出错"
 	OtherError         = 110
 	OtherErrorMsg      = "其他错误"
+	PostNotExist       = 120
+	PostNotExistMsg    = "文章不存在"
 	Unauthorized       = -99
 	UnauthorizedMsg    = "未登录"
 )

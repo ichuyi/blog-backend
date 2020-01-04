@@ -89,3 +89,48 @@ func getPostList(ctx *gin.Context) {
 	util.OKResponse(ctx, result)
 
 }
+func getPost(ctx *gin.Context) {
+	v := ctx.Query("id")
+	id, err := strconv.Atoi(v)
+	if err != nil {
+		util.FailedResponse(ctx, util.ParaError, util.ParaErrorMsg)
+		return
+	}
+	post := &model.Post{
+		Id: id,
+	}
+	postList, err := dao.GetPostByCondition(post)
+	if err != nil {
+		util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
+		return
+	}
+	if len(postList) == 0 {
+		util.FailedResponse(ctx, util.PostNotExist, util.PostNotExistMsg)
+		return
+	}
+	result := make([]PostDetail, len(postList))
+	for i, p := range postList {
+		result[i] = PostDetail{
+			Id:         p.Id,
+			UserId:     p.UserId,
+			CreateTime: p.CreateTime,
+			UpdateTime: p.UpdateTime,
+			Title:      p.Title,
+			Content:    p.Content,
+		}
+		result[i].Label = make([]struct {
+			Id   int    `json:"id"`
+			Name string `json:"name"`
+		}, len(p.Label))
+		for j, l := range p.Label {
+			la, err := dao.GetLabelById(l)
+			if err != nil || la == nil {
+				util.FailedResponse(ctx, util.SQLError, util.SQLErrorMsg)
+				return
+			}
+			result[i].Label[j].Name = la.Name
+			result[i].Label[j].Id = la.Id
+		}
+	}
+	util.OKResponse(ctx, result[0])
+}
