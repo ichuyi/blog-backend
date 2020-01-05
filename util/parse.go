@@ -48,9 +48,9 @@ type Config struct {
 var (
 	execBasePath = getCurrentDirectory()
 	//execBasePath = "/Users/mhiwy/Documents/blog-backend"
-	configPath = execBasePath + "/config.json"
-	ConfigInfo Config
-	UploadPath string
+	configPath   = execBasePath + "/config.json"
+	ConfigInfo   Config
+	UploadPath   string
 )
 
 func init() {
